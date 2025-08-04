@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react';
+// app/SubmitIdeaScreen.tsx
+import React from 'react';
 import {
   View,
   StyleSheet,
-  Alert,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -12,66 +12,30 @@ import {
   Button,
   Title,
   useTheme,
-  Avatar,
   Text,
 } from 'react-native-paper';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import { useSubmitIdea } from '../hooks/useSubmitIdea';
 
 export default function SubmitIdeaScreen() {
   const { colors } = useTheme();
-  const [name, setName] = useState('');
-  const [tagline, setTagline] = useState('');
-  const [description, setDescription] = useState('');
-  const [existingIdeas, setExistingIdeas] = useState([]);
-  const router = useRouter();
-
-  useFocusEffect(
-    useCallback(() => {
-      const loadIdeas = async () => {
-        const storedIdeas = await AsyncStorage.getItem('ideas');
-        const ideas = storedIdeas ? JSON.parse(storedIdeas) : [];
-        setExistingIdeas(ideas);
-      };
-      loadIdeas();
-    }, [])
-  );
-
-  const handleSubmit = async () => {
-    if (!name || !tagline || !description) {
-      Alert.alert('Please fill all fields');
-      return;
-    }
-
-    const aiRating = Math.floor(Math.random() * 101);
-    const newIdea = {
-      id: Date.now().toString(),
-      name,
-      tagline,
-      description,
-      rating: aiRating,
-    };
-
-    try {
-      const updatedIdeas = [...existingIdeas, newIdea];
-      await AsyncStorage.setItem('ideas', JSON.stringify(updatedIdeas));
-      Alert.alert('🎉 Success', `AI Rating: ${aiRating}/100`);
-      setName('');
-      setTagline('');
-      setDescription('');
-      router.push('/IdeaListScreen');
-    } catch (error) {
-      Alert.alert('Error saving your idea');
-    }
-  };
+  const {
+    name,
+    tagline,
+    description,
+    setName,
+    setTagline,
+    setDescription,
+    handleSubmit,
+  } = useSubmitIdea();
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{ flex: 1 }}
     >
-      <ScrollView contentContainerStyle={[styles.scrollBg, { backgroundColor: colors.background }]}>
+      <ScrollView
+        contentContainerStyle={[styles.scrollBg, { backgroundColor: colors.background }]}
+      >
         {/* Header Section */}
         <View style={styles.headerBox}>
           <View style={styles.headerContent}>
@@ -119,7 +83,6 @@ export default function SubmitIdeaScreen() {
           >
             Submit Idea
           </Button>
-
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -156,7 +119,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
     top: 16,
     right: 15,
-    borderRadius:18,
+    borderRadius: 18,
   },
   formWrap: {
     paddingHorizontal: 20,
@@ -168,8 +131,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   descriptionInput: {
-    height: 140, // Increase or adjust height as needed
-    textAlignVertical: 'top', // Ensures text starts from the top
+    height: 140,
+    textAlignVertical: 'top',
   },
   button: {
     marginTop: 14,

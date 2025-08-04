@@ -1,26 +1,12 @@
 import React, { useCallback, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  LayoutAnimation,
-  UIManager,
-  Platform,
-  TouchableOpacity,
+  View, Text, StyleSheet, FlatList, LayoutAnimation,
+  UIManager, Platform, TouchableOpacity,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Button, useTheme } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
-
-type Idea = {
-  id: string;
-  name: string;
-  tagline: string;
-  description: string;
-  rating: number;
-  votes?: number;
-};
+import { Idea } from '../../types/type';
+import { loadIdeas, saveIdeas, sortIdeas, upvoteIdea } from '../../utils/ideaUtils';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -34,43 +20,24 @@ export default function IdeaListScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      const loadIdeas = async () => {
-        const data = await AsyncStorage.getItem('ideas');
-        const parsed: Idea[] = data ? JSON.parse(data) : [];
-        const updated = parsed.map((idea) => ({
-          ...idea,
-          votes: idea.votes ?? 0,
-        }));
-        const sorted = sortIdeas(updated, sortBy);
-        setIdeas(sorted);
+      const fetch = async () => {
+        const data = await loadIdeas();
+        setIdeas(sortIdeas(data, sortBy));
       };
-      loadIdeas();
+      fetch();
     }, [sortBy])
   );
 
-  const saveIdeas = async (updatedIdeas: Idea[]) => {
-    await AsyncStorage.setItem('ideas', JSON.stringify(updatedIdeas));
-    const sorted = sortIdeas(updatedIdeas, sortBy);
-    setIdeas(sorted);
+  const handleUpvote = async (id: string) => {
+    const updated = upvoteIdea(ideas, id);
+    await saveIdeas(updated);
+    setIdeas(sortIdeas(updated, sortBy));
   };
 
   const toggleExpand = (id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
-  };
-
-  const handleUpvote = (id: string) => {
-    const updated = ideas.map((idea) =>
-      idea.id === id ? { ...idea, votes: (idea.votes ?? 0) + 1 } : idea
-    );
-    saveIdeas(updated);
-  };
-
-  const sortIdeas = (ideaList: Idea[], criteria: 'rating' | 'votes') => {
-    return [...ideaList].sort((a, b) =>
-      criteria === 'rating' ? b.rating - a.rating : (b.votes ?? 0) - (a.votes ?? 0)
     );
   };
 
@@ -84,9 +51,7 @@ export default function IdeaListScreen() {
           <Text style={styles.badge}>⭐ {item.rating}/100</Text>
           <Text style={styles.badge}>👍 {item.votes}</Text>
         </View>
-        {isExpanded && (
-          <Text style={styles.description}>{item.description}</Text>
-        )}
+        {isExpanded && <Text style={styles.description}>{item.description}</Text>}
         <View style={styles.actions}>
           <Button
             mode="contained"
@@ -117,38 +82,25 @@ export default function IdeaListScreen() {
       <View style={styles.sortContainer}>
         <Text style={styles.sortLabel}>Sort by:</Text>
         <View style={styles.capsuleToggleContainer}>
-          <TouchableOpacity
-            onPress={() => setSortBy('rating')}
-            style={[
-              styles.capsuleButton,
-              sortBy === 'rating' && styles.capsuleButtonActive,
-            ]}
-          >
-            <Text
+          {['rating', 'votes'].map((criteria) => (
+            <TouchableOpacity
+              key={criteria}
+              onPress={() => setSortBy(criteria as 'rating' | 'votes')}
               style={[
-                styles.capsuleText,
-                sortBy === 'rating' && styles.capsuleTextActive,
+                styles.capsuleButton,
+                sortBy === criteria && styles.capsuleButtonActive,
               ]}
             >
-              Rating
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setSortBy('votes')}
-            style={[
-              styles.capsuleButton,
-              sortBy === 'votes' && styles.capsuleButtonActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.capsuleText,
-                sortBy === 'votes' && styles.capsuleTextActive,
-              ]}
-            >
-              Votes
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.capsuleText,
+                  sortBy === criteria && styles.capsuleTextActive,
+                ]}
+              >
+                {criteria.charAt(0).toUpperCase() + criteria.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
 
@@ -161,6 +113,9 @@ export default function IdeaListScreen() {
     </View>
   );
 }
+
+// (keep your existing styles here)
+
 
 const styles = StyleSheet.create({
   container: {

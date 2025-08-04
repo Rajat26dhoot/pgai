@@ -1,4 +1,5 @@
-import React, { useEffect, useState ,useCallback } from 'react';
+// app/LeaderboardScreen.tsx
+import React from 'react';
 import {
   View,
   Text,
@@ -8,17 +9,9 @@ import {
   UIManager,
   TouchableOpacity,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect } from '@react-navigation/native';
-
-type Idea = {
-  id: string;
-  name: string;
-  tagline: string;
-  rating: number;
-  votes?: number;
-};
+import { useLeaderboard } from '../hooks/useLeaderboard';
+import { Idea } from '../types/idea';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -27,31 +20,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 const badgeEmojis = ['🥇', '🥈', '🥉', '🏅', '🎖️']; // for top 5
 
 export default function LeaderboardScreen() {
-  const [ideas, setIdeas] = useState<Idea[]>([]);
-  const [sortBy, setSortBy] = useState<'rating' | 'votes'>('votes');
-
-  useFocusEffect(
-    useCallback(() => {
-      const fetchAndSortIdeas = async () => {
-        const data = await AsyncStorage.getItem('ideas');
-        const parsed: Idea[] = data ? JSON.parse(data) : [];
-  
-        const withVotes = parsed.map((idea) => ({
-          ...idea,
-          votes: idea.votes ?? 0,
-        }));
-  
-        const sorted = [...withVotes].sort((a, b) =>
-          sortBy === 'rating' ? b.rating - a.rating : (b.votes ?? 0) - (a.votes ?? 0)
-        );
-  
-        setIdeas(sorted.slice(0, 5));
-      };
-  
-      fetchAndSortIdeas();
-    }, [sortBy])
-  );
-  
+  const { ideas, sortBy, setSortBy } = useLeaderboard();
 
   const renderItem = ({ item, index }: { item: Idea; index: number }) => {
     const rankColor = ['#ffd700', '#c0c0c0', '#cd7f32', '#aaa', '#999'][index];
@@ -85,7 +54,7 @@ export default function LeaderboardScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>🏆 Top 5 Ideas</Text>
 
-      <Text style={styles.head}> Sort By</Text>
+      <Text style={styles.head}>Sort By</Text>
       <View style={styles.switchContainer}>
         <TouchableOpacity
           style={[
@@ -94,7 +63,12 @@ export default function LeaderboardScreen() {
           ]}
           onPress={() => setSortBy('votes')}
         >
-          <Text style={[styles.switchText, sortBy === 'votes' && styles.switchTextActive]}>
+          <Text
+            style={[
+              styles.switchText,
+              sortBy === 'votes' && styles.switchTextActive,
+            ]}
+          >
             Votes
           </Text>
         </TouchableOpacity>
@@ -105,7 +79,12 @@ export default function LeaderboardScreen() {
           ]}
           onPress={() => setSortBy('rating')}
         >
-          <Text style={[styles.switchText, sortBy === 'rating' && styles.switchTextActive]}>
+          <Text
+            style={[
+              styles.switchText,
+              sortBy === 'rating' && styles.switchTextActive,
+            ]}
+          >
             Rating
           </Text>
         </TouchableOpacity>
@@ -125,10 +104,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  head:{
-    fontSize:20,
-    fontWeight:500,
-    paddingLeft:20,
+  head: {
+    fontSize: 20,
+    fontWeight: '500',
+    paddingLeft: 20,
   },
   title: {
     fontSize: 26,
@@ -139,7 +118,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#27273f',
   },
   switchContainer: {
-    padding:15,
+    padding: 15,
     gap: 12,
   },
   switchButton: {
