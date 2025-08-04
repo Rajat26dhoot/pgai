@@ -6,6 +6,16 @@
 const tintColorLight = '#0a7ea4';
 const tintColorDark = '#fff';
 
+export const themeColors = {
+  primary: '#80ffea',
+  background: '#d6f0ef',   // a subtle, refreshing tint
+  surface: '#ffffff',      // for cards/forms
+  accent: '#56dacd',       // deeper highlight for buttons/elements
+  text: '#1a1a1a',         // nearly black for strong contrast
+  placeholder: '#5d5d5d',
+  notification: '#f50057', // for any alerts or toasts
+};
+
 export const Colors = {
   light: {
     text: '#11181C',
